@@ -27,11 +27,13 @@ classdef integrator < handle
       obj.dx = 0.1;
       if nargin > 0
         if  isa(varargin{1}, 'integrator')
-        obj.method = varargin{1}.method;
-        obj.xk = varargin{1}.xk;
-        obj.wk = varargin{1}.wk;
-        obj.dx = varargin{1}.dx;
+          obj.method = varargin{1}.method;
+          obj.xk = varargin{1}.xk;
+          obj.wk = varargin{1}.wk;
+          obj.dx = varargin{1}.dx;
+        endif
       else
+        
         for i = 1: nargin-1
           switch varargin{i}
             case "method"
@@ -40,7 +42,7 @@ classdef integrator < handle
               obj.dx = varargin{i+1};
           endswitch
         endfor
-      endif
+      
       endif
 
     endfunction
@@ -112,18 +114,25 @@ classdef integrator < handle
         case "middle"
           calcul = @(f, binf, bsup) f(2\(bsup+binf)) * (bsup-binf);
         case "trapezes"
-          calcul = @(f, binf, bsup) (1/2) *( f(binf) + f(bsup) ) *(bsup - binf);
+          calcul = @(f, binf, bsup) (1/2) * ( f(binf) + f(bsup) ) * (bsup - binf);
       endswitch
 
 
 
       result = 0;
       for i = 1: length(range)-1
+
         binf = range(i);
         bsup = range(i+1);
 
+        plot(hax,[binf, binf, bsup, bsup], [0, f(binf), f(binf), 0], 'r')
+        
         result += calcul(f, binf, bsup);
       endfor
+
+      
+
+      plot(hax, linspace(a, b, 100), f(linspace(a, b, 100)))
 
       I = result
     endfunction
