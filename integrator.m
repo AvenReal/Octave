@@ -26,15 +26,13 @@ classdef integrator < handle
       obj.method = "trapezes";
       obj.dx = 0.1;
       if nargin > 0
-        if  isa(varargin{1}, 'integrator')
+        if isa(varargin{1}, 'integrator')
           obj.method = varargin{1}.method;
           obj.xk = varargin{1}.xk;
           obj.wk = varargin{1}.wk;
           obj.dx = varargin{1}.dx;
-        endif
-      else
-        
-        for i = 1: nargin-1
+        else
+          for i = 1: nargin
           switch varargin{i}
             case "method"
               obj.method = varargin{i+1};
@@ -42,9 +40,8 @@ classdef integrator < handle
               obj.dx = varargin{i+1};
           endswitch
         endfor
-      
+        endif
       endif
-
     endfunction
 
     % Return the property value. Argument prop can be "method" or "dx".
@@ -67,7 +64,7 @@ classdef integrator < handle
     %   or itg.set("dx",0.1)
     % If varargin is empty, nothing is done.
     function this = set (this, varargin)
-      for i = 1: nargin-1
+      for i = 1: nargin
           switch varargin{i}
             case "method"
               this.method = varargin{i+1};
@@ -103,18 +100,29 @@ classdef integrator < handle
     function I = integrate(this,f,a,b,n,hax)
       range = linspace(a, b, n);
       
+      
 
       calcul = @(f, binf, bsup) f(binf) * (bsup-binf);
+      draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup], [0 f(binf) f(binf) 0], 'r', "linewidth", 1);
+
 
       switch this.method
         case "left"
           calcul = @(f, binf, bsup) f(binf) * (bsup-binf);
+          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
+        
         case "right"
           calcul = @(f, binf, bsup) f(bsup) * (bsup-binf);
+          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
+          
         case "middle"
           calcul = @(f, binf, bsup) f(2\(bsup+binf)) * (bsup-binf);
+          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
+          
         case "trapezes"
           calcul = @(f, binf, bsup) (1/2) * ( f(binf) + f(bsup) ) * (bsup - binf);
+          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
+          
       endswitch
 
 
@@ -125,16 +133,19 @@ classdef integrator < handle
         binf = range(i);
         bsup = range(i+1);
 
-        plot(hax,[binf, binf, bsup, bsup], [0, f(binf), f(binf), 0], 'r')
-        
+        if nargin == 6
+          draw(f, binf, bsup);
+        endif
+
         result += calcul(f, binf, bsup);
       endfor
 
       
+      if nargin == 6
+        plot(hax, linspace(a, b, 500), f(linspace(a, b, 500)), 'b', "linewidth", 2);
+      endif
 
-      plot(hax, linspace(a, b, 100), f(linspace(a, b, 100)))
-
-      I = result
+      I = result;
     endfunction
 
     % Computes the values of a primitive of f: the integral of f between from,
