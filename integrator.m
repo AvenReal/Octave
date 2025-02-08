@@ -102,8 +102,8 @@ classdef integrator < handle
       
       
 
-      calcul = @(f, binf, bsup) f(binf) * (bsup-binf);
-      draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup], [0 f(binf) f(binf) 0], 'r', "linewidth", 1);
+      calcul = @(f, binf, bsup) 0;
+      draw = @(f, binf, bsup) 0;
 
 
       switch this.method
@@ -125,7 +125,11 @@ classdef integrator < handle
           
       endswitch
 
-
+      if(nargin != 6)
+        draw = @(f, binf, bsup) 0;
+      else
+        plot(hax, linspace(a, b, 500), f(linspace(a, b, 500)), 'b', "linewidth", 2);
+      endif
 
       result = 0;
       for i = 1: length(range)-1
@@ -133,17 +137,13 @@ classdef integrator < handle
         binf = range(i);
         bsup = range(i+1);
 
-        if nargin == 6
-          draw(f, binf, bsup);
-        endif
-
+        draw(f, binf, bsup);
         result += calcul(f, binf, bsup);
+        
       endfor
 
       
-      if nargin == 6
-        plot(hax, linspace(a, b, 500), f(linspace(a, b, 500)), 'b', "linewidth", 2);
-      endif
+      
 
       I = result;
     endfunction

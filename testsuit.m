@@ -1,31 +1,20 @@
 
+function res = mygraph(f, binf, bsup, from, to)
+    a = integrator("method", "left");
+    b = integrator("method", "right");
+    c = integrator("method", "middle");
+    d = integrator();
 
-a = integrator("method", "left");
-b = integrator("method", "right");
-c = integrator("method", "middle");
-d = integrator();
+    figure;
+    ax = axes();
+    hold on;
 
-figure;
-ax = axes();
-hold on;
+    for i = from:to
+        plot(ax, i, a.integrate(f, binf, bsup, i), 'r');
+        plot(ax, i, b.integrate(f, binf, bsup, i), 'g');
+        plot(ax, i, c.integrate(f, binf, bsup, i), 'b');
+        plot(ax, i, d.integrate(f, binf, bsup, i));
+    endfor
 
-for i = 0:100
-    plot(ax, i, a.integrate(@(x) sin(x.^2)*e^x + log(sqrt(x)), 0, 2*pi, i), 'r');
-    plot(ax, i, b.integrate(@(x) sin(x.^2)*e^x + log(sqrt(x)), 0, 2*pi, i), 'g');
-    plot(ax, i, c.integrate(@(x) sin(x.^2)*e^x + log(sqrt(x)), 0, 2*pi, i), 'b');
-    plot(ax, i, d.integrate(@(x) sin(x.^2)*e^x + log(sqrt(x)), 0, 2*pi, i));
-endfor
-
-
-
-
-
-printf(a.get("method"))
-% hold off;
-% 
-% b = integrator(a);
-% 
-% b.set("method", "middle");
-% 
-% hold on;
-% a.integrate(@(x) x.^3 -7, -10, 20, 25, ax)
+    return;
+endfunction
