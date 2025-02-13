@@ -33,7 +33,15 @@ classdef integrator < handle
           obj.wk = varargin{1}.wk;
           obj.dx = varargin{1}.dx;
         else
-          obj.set(varargin);
+          for i = 1: nargin
+          switch varargin{i}
+            case "method"
+              obj.method = varargin{i+1};
+            case "dx"
+              obj.dx = varargin{i+1};
+          endswitch
+          endfor
+          obj.update()
         endif
       endif
     endfunction
@@ -57,16 +65,17 @@ classdef integrator < handle
     %   or itg.set("method","left")
     %   or itg.set("dx",0.1)
     % If varargin is empty, nothing is done.
-    function this = set (this, arg)
-      for i = 1: length( arg)
-          switch arg(i)
-            case "method"
-              this.method = arg(i+1);
-            case "dx"
-              this.dx = arg(i+1);
-          endswitch
+    function this = set (this, varargin)
+      varargin
+      nargin
+      for i = 1: nargin
+        switch varargin{i}
+          case "method"
+            this.method = varargin{i+1};
+          case "dx"
+            this.dx = varargin{i+1};
+        endswitch
       endfor
-
       this.update()
     endfunction
 
@@ -83,19 +92,22 @@ classdef integrator < handle
         case "trapezes"
           this.wk = [1/2  1/2];
           this.xk = [0  1];
-          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
+          
+          
         case "left"
           this.wk = [1];
           this.xk = [0];
-          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
+          
         case "right"
           this.wk = [1];
           this.xk = [1];
-          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
         case "middle"
           this.wk = [1];
           this.xk = [1/2];
-          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
       endswitch
     endfunction
 
@@ -143,11 +155,12 @@ classdef integrator < handle
       endswitch
 
       if(nargin == 6)
+        drawing = true;
         hold off;
         plot(hax, linspace(a, b, 1000), f(linspace(a, b, 1000)), 'b', "linewidth", 2);
         hold on;
       else
-        
+        drawing = false;
       endif
 
       result = 0;
@@ -155,8 +168,10 @@ classdef integrator < handle
 
         binf = range(i);
         bsup = range(i+1);
+        if(drawing)
+          this.draw(f, binf, bsup, hax);
+        endif
 
-        this.draw(f, binf, bsup);
         drawnow()
         result += calcul(f, binf, bsup);
         
