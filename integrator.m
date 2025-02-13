@@ -41,9 +41,9 @@ classdef integrator < handle
               obj.dx = varargin{i+1};
           endswitch
           endfor
-          obj.update()
         endif
       endif
+      obj.update();
     endfunction
 
     % Return the property value. Argument prop can be "method" or "dx".
@@ -66,17 +66,18 @@ classdef integrator < handle
     %   or itg.set("dx",0.1)
     % If varargin is empty, nothing is done.
     function this = set (this, varargin)
-      varargin
-      nargin
-      for i = 1: nargin
-        switch varargin{i}
-          case "method"
-            this.method = varargin{i+1};
-          case "dx"
-            this.dx = varargin{i+1};
-        endswitch
-      endfor
-      this.update()
+      try
+        for i = 1: nargin
+          switch varargin{i}
+            case "method"
+              this.method = varargin{i+1};
+            case "dx"
+              this.dx = varargin{i+1};
+          endswitch
+        endfor
+        this.update();
+      end_try_catch
+      this.update();
     endfunction
 
     % This function displays the integrator properties.
@@ -90,24 +91,31 @@ classdef integrator < handle
       switch this.method
       
         case "trapezes"
-          this.wk = [1/2  1/2];
-          this.xk = [0  1];
-          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
-          
+          this.wk = [0.5 0.5];
+          this.xk = [0 1];
+          this.draw = @(f, ai, bi, hax) plot(hax, [ai ai bi bi ai], [0 f(ai) f(bi) 0 0], 'r', "linewidth", 1);
           
         case "left"
           this.wk = [1];
           this.xk = [0];
-          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, ai, bi, hax) plot(hax, [ai ai bi bi ai], [0 f(ai) f(ai) 0 0], 'r', "linewidth", 1);
           
         case "right"
           this.wk = [1];
           this.xk = [1];
-          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, ai, bi, hax) plot(hax, [ai ai bi bi ai], [0 f(bi) f(bi) 0 0], 'r', "linewidth", 1);
+        
         case "middle"
           this.wk = [1];
           this.xk = [1/2];
-          this.draw = @(f, binf, bsup, hax) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
+          this.draw = @(f, ai, bi, hax) plot(hax, [ai ai bi bi ai], [0 f((bi+ai) / 2) f((bi+ai) / 2) 0 0], 'r', "linewidth", 1);
+        
+        case "gauss2"
+          this.wk = [0.5 0.5];
+          this.xk = [(3-sqrt(3))/6 (3+sqrt(3))/6];
+        case "gauss3"
+          this.wk = [5/18 4/9 5/18]
+          this.xk = [(5-sqrt(15))/10 0.5 (5+sqrt(15))/10];
       endswitch
     endfunction
 
@@ -132,27 +140,6 @@ classdef integrator < handle
     function I = integrate(this,f,a,b,n,hax)
       range = linspace(a, b, n);
       
-      
-
-      
-
-      calcul = @(f, binf, bsup) 0;
-
-
-      switch this.method
-        case "left"
-          calcul = @(f, binf, bsup) f(binf) * (bsup-binf);
-        
-        case "right"
-          calcul = @(f, binf, bsup) f(bsup) * (bsup-binf);
-          
-        case "middle"
-          calcul = @(f, binf, bsup) f(2\(bsup+binf)) * (bsup-binf);
-          
-        case "trapezes"
-          calcul = @(f, binf, bsup) (1/2) * ( f(binf) + f(bsup) ) * (bsup - binf);
-          
-      endswitch
 
       if(nargin == 6)
         drawing = true;
@@ -165,15 +152,21 @@ classdef integrator < handle
 
       result = 0;
       for i = 1: length(range)-1
-
-        binf = range(i);
-        bsup = range(i+1);
+        
+        ai = range(i);
+        bi = range(i+1);
         if(drawing)
-          this.draw(f, binf, bsup, hax);
+          this.draw(f, ai, bi, hax);
         endif
 
+        sum = 0;
+        for k=1:length(this.xk)
+          sum += this.wk(k)*f(ai + this.xk(k)*(bi - ai));
+        endfor
+
+        result += (bi-ai)*sum;
         drawnow()
-        result += calcul(f, binf, bsup);
+        % result += calcul(f, ai, bi);
         
       endfor
 
