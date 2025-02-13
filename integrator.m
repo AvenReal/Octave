@@ -12,6 +12,7 @@ classdef integrator < handle
         % subintervals, n such that (x-from)/n ~= dx.
         % More precisely, n = round( (x-from)/dx ) (or n=1 if the latter formula
         % evaluates to 0).
+    draw;
   endproperties
 
 
@@ -32,14 +33,7 @@ classdef integrator < handle
           obj.wk = varargin{1}.wk;
           obj.dx = varargin{1}.dx;
         else
-          for i = 1: nargin
-          switch varargin{i}
-            case "method"
-              obj.method = varargin{i+1};
-            case "dx"
-              obj.dx = varargin{i+1};
-          endswitch
-        endfor
+          obj.set(varargin);
         endif
       endif
     endfunction
@@ -63,15 +57,17 @@ classdef integrator < handle
     %   or itg.set("method","left")
     %   or itg.set("dx",0.1)
     % If varargin is empty, nothing is done.
-    function this = set (this, varargin)
-      for i = 1: nargin
-          switch varargin{i}
+    function this = set (this, arg)
+      for i = 1: length( arg)
+          switch arg(i)
             case "method"
-              this.method = varargin{i+1};
+              this.method = arg(i+1);
             case "dx"
-              this.dx = varargin{i+1};
+              this.dx = arg(i+1);
           endswitch
-        endfor
+      endfor
+
+      this.update()
     endfunction
 
     % This function displays the integrator properties.
@@ -80,6 +76,30 @@ classdef integrator < handle
       printf("method: %s\n", this.method);
       printf("dx = %.2e\n", this.dx);
     endfunction
+
+    function this = update(this)
+      switch this.method
+      
+        case "trapezes"
+          this.wk = [1/2  1/2];
+          this.xk = [0  1];
+          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
+        case "left"
+          this.wk = [1];
+          this.xk = [0];
+          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
+        case "right"
+          this.wk = [1];
+          this.xk = [1];
+          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
+        case "middle"
+          this.wk = [1];
+          this.xk = [1/2];
+          this.draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
+      endswitch
+    endfunction
+
+
 
     % This function compute the integral of f between a and b, using the
     % quadrature formula specified by the property method.
@@ -102,33 +122,32 @@ classdef integrator < handle
       
       
 
+      
+
       calcul = @(f, binf, bsup) 0;
-      draw = @(f, binf, bsup) 0;
 
 
       switch this.method
         case "left"
           calcul = @(f, binf, bsup) f(binf) * (bsup-binf);
-          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(binf) 0 0], 'r', "linewidth", 1);
         
         case "right"
           calcul = @(f, binf, bsup) f(bsup) * (bsup-binf);
-          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(bsup) f(bsup) 0 0], 'r', "linewidth", 1);
           
         case "middle"
           calcul = @(f, binf, bsup) f(2\(bsup+binf)) * (bsup-binf);
-          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f((bsup+binf) / 2) f((bsup+binf) / 2) 0 0], 'r', "linewidth", 1);
           
         case "trapezes"
           calcul = @(f, binf, bsup) (1/2) * ( f(binf) + f(bsup) ) * (bsup - binf);
-          draw = @(f, binf, bsup) plot(hax, [binf binf bsup bsup binf], [0 f(binf) f(bsup) 0 0], 'r', "linewidth", 1);
           
       endswitch
 
-      if(nargin != 6)
-        draw = @(f, binf, bsup) 0;
+      if(nargin == 6)
+        hold off;
+        plot(hax, linspace(a, b, 1000), f(linspace(a, b, 1000)), 'b', "linewidth", 2);
+        hold on;
       else
-        plot(hax, linspace(a, b, 500), f(linspace(a, b, 500)), 'b', "linewidth", 2);
+        
       endif
 
       result = 0;
@@ -137,14 +156,15 @@ classdef integrator < handle
         binf = range(i);
         bsup = range(i+1);
 
-        draw(f, binf, bsup);
+        this.draw(f, binf, bsup);
+        drawnow()
         result += calcul(f, binf, bsup);
         
       endfor
 
       
       
-
+      % hold off;
       I = result;
     endfunction
 
